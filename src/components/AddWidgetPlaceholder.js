@@ -3,6 +3,7 @@
 export default function AddWidgetPlaceholder({ onClick }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className="flex flex-col items-center justify-center
                  w-full max-w-md min-h-[180px]

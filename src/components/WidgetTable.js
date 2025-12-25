@@ -1,6 +1,6 @@
 "use client";
 
-export default function WidgetTable({ dragListeners }) {
+export default function WidgetTable({ dragListeners, onDelete }) {
   const data = [
     { company: "Uti Silver Etf", price: 114.2, high: 114.73 },
     { company: "Mirae Asset MF Silver Etf", price: 114.92, high: 114.7 },
@@ -18,60 +18,55 @@ export default function WidgetTable({ dragListeners }) {
         <div className="flex gap-2 items-center">
           <span
             {...dragListeners}
-            className="cursor-grab text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            className="cursor-grab text-slate-400 hover:text-slate-600"
           >
             ⠿
           </span>
           <span className="font-semibold text-slate-900 dark:text-white">
             52 week high
           </span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500">
-            3600s
-          </span>
         </div>
-        <span className="text-sm text-slate-500">6 of 6 items</span>
+
+        <button
+          onClick={onDelete}
+          className="text-slate-400 hover:text-red-500"
+          title="Delete widget"
+        >
+          🗑
+        </button>
       </div>
 
-      {/* Search (UI only) */}
+      {/* Search */}
       <input
         placeholder="Search table..."
         className="mb-4 w-full max-w-xs rounded-md px-3 py-2 text-sm
                    bg-slate-100 dark:bg-slate-800
-                   border border-slate-300 dark:border-slate-700
-                   outline-none"
+                   border border-slate-300 dark:border-slate-700"
       />
 
       {/* Table */}
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-500">
-            <th className="py-2 text-left">company ⇅</th>
-            <th className="py-2 text-left">price ⇅</th>
-            <th className="py-2 text-left">52_week_high ⇅</th>
+            <th className="py-2 text-left">company</th>
+            <th className="py-2 text-left">price</th>
+            <th className="py-2 text-left">52_week_high</th>
           </tr>
         </thead>
         <tbody>
           {data.map((row, i) => (
             <tr
               key={i}
-              className="border-b border-slate-100 dark:border-slate-800
-                         hover:bg-slate-50 dark:hover:bg-slate-800/40"
+              className="border-b border-slate-100 dark:border-slate-800"
             >
-              <td className="py-2 text-slate-900 dark:text-white">
-                {row.company}
-              </td>
-              <td className="py-2 text-slate-900 dark:text-white">
-                {row.price}
-              </td>
-              <td className="py-2 text-slate-900 dark:text-white">
-                {row.high}
-              </td>
+              <td className="py-2">{row.company}</td>
+              <td className="py-2">{row.price}</td>
+              <td className="py-2">{row.high}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {/* Footer */}
       <div className="mt-4 text-xs text-center text-slate-400">
         Last updated: 18:58:26
       </div>

@@ -10,9 +10,6 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 
-/**
- * ✅ Minimal, safe registration
- */
 ChartJS.register(
   LineElement,
   CategoryScale,
@@ -21,9 +18,8 @@ ChartJS.register(
   Tooltip
 );
 
-export default function WidgetChart({ dragListeners }) {
-  // 📈 Mock Groww stock LINE data
-  const lineData = {
+export default function WidgetChart({ dragListeners, onDelete }) {
+  const data = {
     labels: ["09:30", "10:00", "10:30", "11:00", "11:30", "12:00"],
     datasets: [
       {
@@ -45,43 +41,36 @@ export default function WidgetChart({ dragListeners }) {
         <div className="flex items-center gap-2">
           <span
             {...dragListeners}
-            className="cursor-grab text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            className="cursor-grab text-slate-400 hover:text-slate-600"
           >
             ⠿
           </span>
           <span className="font-semibold text-slate-900 dark:text-white">
             Groww Stock Price
           </span>
-          <span className="text-xs px-2 py-0.5 rounded-full
-                           bg-slate-200 dark:bg-slate-800
-                           text-slate-500">
-            1D
-          </span>
         </div>
-        <span className="text-sm text-slate-500">Mock data</span>
+
+        <button
+          onClick={onDelete}
+          className="text-slate-400 hover:text-red-500"
+          title="Delete widget"
+        >
+          🗑
+        </button>
       </div>
 
-      {/* Line Chart */}
       <Line
-        data={lineData}
+        data={data}
         options={{
           responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: { enabled: true },
-          },
+          plugins: { legend: { display: false } },
           scales: {
-            x: {
-              grid: { display: false },
-            },
-            y: {
-              grid: { color: "#334155" },
-            },
+            x: { grid: { display: false } },
+            y: { grid: { color: "#334155" } },
           },
         }}
       />
 
-      {/* Footer */}
       <div className="mt-4 text-xs text-center text-slate-400">
         Last updated: 10:45 AM
       </div>

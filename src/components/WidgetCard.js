@@ -1,9 +1,11 @@
-export default function WidgetCard({ dragListeners }) {
+"use client";
+
+export default function WidgetCard({ dragListeners, onDelete }) {
   return (
-    <div className="relative rounded-xl p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+    <div className="rounded-xl p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
       
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-2">
           <span
             {...dragListeners}
@@ -11,14 +13,21 @@ export default function WidgetCard({ dragListeners }) {
           >
             ⠿
           </span>
-          <span className="font-semibold">Bitcoin</span>
+          <span className="font-semibold text-slate-900 dark:text-white">
+            Bitcoin
+          </span>
         </div>
 
-        <div className="flex gap-3 text-slate-400">
-          ⟳ ⚙ 🗑
-        </div>
+        <button
+          onClick={onDelete}
+          className="text-slate-400 hover:text-red-500"
+          title="Delete widget"
+        >
+          🗑
+        </button>
       </div>
 
+      {/* Content */}
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-slate-500">currency</span>
