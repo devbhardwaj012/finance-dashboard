@@ -11,12 +11,12 @@ import {
 
 import Navbar from "@/components/Navbar";
 import AddWidgetModal from "@/components/AddWidgetModal";
-import WidgetCard from "@/components/WidgetCard";
-import WidgetTable from "@/components/WidgetTable";
-import WidgetChart from "@/components/WidgetChart";
 import SortableWidget from "@/components/SortableWidget";
 
-// ✅ Disable SSR for this leaf component (DnD-safe)
+import CardWidget from "@/components/widgets/CardWidget";
+import TableWidget from "@/components/widgets/TableWidget";
+import ChartWidget from "@/components/widgets/ChartWidget";
+
 const AddWidgetPlaceholder = dynamic(
   () => import("@/components/AddWidgetPlaceholder"),
   { ssr: false }
@@ -27,31 +27,20 @@ const STORAGE_KEY = "dashboard-widgets";
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [widgets, setWidgets] = useState([]);
+  const [editingWidget, setEditingWidget] = useState(null);
 
-  /* ===============================
-     🔁 LOAD FROM localStorage
-     =============================== */
+  /* 🔁 Load */
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setWidgets(JSON.parse(stored));
-      } catch {
-        console.warn("Failed to parse widget layout");
-      }
-    }
+    if (stored) setWidgets(JSON.parse(stored));
   }, []);
 
-  /* ===============================
-     💾 SAVE TO localStorage
-     =============================== */
+  /* 💾 Save */
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(widgets));
   }, [widgets]);
 
-  /* ===============================
-     🧲 Drag handler
-     =============================== */
+  /* 🧲 Drag */
   function handleDragEnd(event) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -63,11 +52,41 @@ export default function Home() {
     });
   }
 
-  /* ===============================
-     🗑 Delete widget
-     =============================== */
+  /* 🗑 Delete */
   function handleDelete(id) {
     setWidgets((prev) => prev.filter((w) => w.id !== id));
+  }
+
+  /* ✏️ Edit */
+  function handleEdit(widget) {
+    setEditingWidget(widget);
+    setShowModal(true);
+  }
+
+  /* 💾 Save (create OR update) */
+  function handleSave(widget) {
+    setWidgets((prev) => {
+      const exists = prev.find((w) => w.id === widget.id);
+      if (!exists) return [...prev, widget];
+
+      return prev.map((w) => (w.id === widget.id ? widget : w));
+    });
+
+    setEditingWidget(null);
+    setShowModal(false);
+  }
+
+  function renderWidget(widget, dragListeners) {
+    const props = {
+      widget,
+      dragListeners,
+      onDelete: () => handleDelete(widget.id),
+      onEdit: () => handleEdit(widget), // 🔥 IMPORTANT
+    };
+
+    if (widget.type === "table") return <TableWidget {...props} />;
+    if (widget.type === "chart") return <ChartWidget {...props} />;
+    return <CardWidget {...props} />;
   }
 
   return (
@@ -86,35 +105,9 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {widgets.map((widget) => (
                 <SortableWidget key={widget.id} id={widget.id}>
-                  {({ dragListeners }) => {
-                    if (widget.type === "table") {
-                      return (
-                        <WidgetTable
-                          key={widget.id}
-                          dragListeners={dragListeners}
-                          onDelete={() => handleDelete(widget.id)}
-                        />
-                      );
-                    }
-
-                    if (widget.type === "chart") {
-                      return (
-                        <WidgetChart
-                          key={widget.id}
-                          dragListeners={dragListeners}
-                          onDelete={() => handleDelete(widget.id)}
-                        />
-                      );
-                    }
-
-                    return (
-                      <WidgetCard
-                        key={widget.id}
-                        dragListeners={dragListeners}
-                        onDelete={() => handleDelete(widget.id)}
-                      />
-                    );
-                  }}
+                  {({ dragListeners }) =>
+                    renderWidget(widget, dragListeners)
+                  }
                 </SortableWidget>
               ))}
 
@@ -126,13 +119,13 @@ export default function Home() {
 
       {showModal && (
         <AddWidgetModal
-          onClose={() => setShowModal(false)}
-          onAdd={(type) =>
-            setWidgets((prev) => [
-              ...prev,
-              { id: crypto.randomUUID(), type },
-            ])
-          }
+          mode={editingWidget ? "edit" : "create"}
+          initialData={editingWidget}
+          onClose={() => {
+            setShowModal(false);
+            setEditingWidget(null);
+          }}
+          onSave={handleSave}
         />
       )}
     </main>

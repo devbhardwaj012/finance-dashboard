@@ -3,23 +3,19 @@ import Providers from "./providers";
 
 export const metadata = {
   title: "Finance Dashboard",
-  description: "Custom finance dashboard",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Theme bootstrap (pre-hydration) */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function () {
                 try {
                   const theme = localStorage.getItem("theme");
-                  if (theme === "dark") {
-                    document.documentElement.classList.add("dark");
-                  }
+                  if (theme === "dark") document.documentElement.classList.add("dark");
                 } catch (_) {}
               })();
             `,
