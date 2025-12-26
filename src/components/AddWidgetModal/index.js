@@ -8,8 +8,8 @@ import FieldSelector from "./FieldSelector";
 import WidgetTypeSelector from "./WidgetTypeSelector";
 
 export default function AddWidgetModal({
-  mode = "create",      // "create" | "edit"
-  initialData = null,   // widget when editing
+  mode = "create",
+  initialData = null,
   onClose,
   onSave,
 }) {
@@ -19,140 +19,173 @@ export default function AddWidgetModal({
   const [type, setType] = useState("card");
 
   const [apiResult, setApiResult] = useState(null);
-  const [selectedFields, setSelectedFields] = useState([]);
+  const [fields, setFields] = useState([]);
 
-  /* ===============================
-     🔁 Prefill when editing
-     =============================== */
+  // Table
+  const [arrayPath, setArrayPath] = useState("");
+
+  // Chart
+  const [seriesPath, setSeriesPath] = useState("");
+  const [yField, setYField] = useState("");
+
   useEffect(() => {
     if (mode === "edit" && initialData) {
-      setName(initialData.name ?? "");
-      setUrl(initialData.url ?? "");
-      setInterval(initialData.interval ?? 30);
-      setType(initialData.type ?? "card");
-      setSelectedFields(initialData.fields ?? []);
+      setName(initialData.name);
+      setUrl(initialData.url);
+      setInterval(initialData.interval);
+      setType(initialData.type);
+      setFields(initialData.fields || []);
+      setArrayPath(initialData.arrayPath || "");
+      setSeriesPath(initialData.seriesPath || "");
+      setYField(initialData.yField || "");
     }
   }, [mode, initialData]);
 
-  /* ===============================
-     🔍 Test API
-     =============================== */
   async function testApi() {
-    setApiResult(null);
-
     const result = await validateApi(url);
     setApiResult(result);
-
-    // Reset fields when API changes
-    if (!result.ok) {
-      setSelectedFields([]);
-    }
+    setFields([]);
+    setArrayPath("");
+    setSeriesPath("");
+    setYField("");
   }
 
-  /* ===============================
-     🧠 Normalize available fields
-     ===============================
-     Contract:
-     [
-       { path: "currentPrice.NSE", label: "currentPrice → NSE" }
-     ]
-  */
-  const availableFields = useMemo(() => {
-    if (!apiResult?.ok || !apiResult.flattened) return [];
-
-    return Object.entries(apiResult.flattened)
-      .filter(([, value]) => {
-        const t = typeof value;
-        return t === "string" || t === "number" || t === "boolean";
-      })
-      .map(([path]) => ({
-        path,
-        label: path.replace(/\./g, " → "),
-      }));
+  /** ===============================
+   * CARD fields
+   */
+  const cardFields = useMemo(() => {
+    if (!apiResult?.ok) return [];
+    return Object.keys(apiResult.scalars).map((p) => ({
+      path: p,
+      label: p.replace(/\./g, " → "),
+    }));
   }, [apiResult]);
 
-  /* ===============================
-     💾 Save (create or update)
-     =============================== */
+  /** ===============================
+   * TABLE columns
+   */
+  const tableColumns = useMemo(() => {
+    if (!arrayPath || !apiResult?.arrays[arrayPath]) return [];
+    const firstRow = apiResult.arrays[arrayPath][0];
+    return Object.keys(firstRow);
+  }, [arrayPath, apiResult]);
+
+  /** ===============================
+   * CHART y-fields
+   */
+  const chartFields = useMemo(() => {
+    if (!seriesPath || !apiResult?.series[seriesPath]) return [];
+    const first = Object.values(apiResult.series[seriesPath])[0];
+    return Object.keys(first);
+  }, [seriesPath, apiResult]);
+
   function handleSave() {
-    const widget = {
-      id: initialData?.id ?? crypto.randomUUID(),
-      name: name.trim(),
-      url: url.trim(),
+    onSave({
+      id: crypto.randomUUID(),
+      name,
+      url,
       interval,
       type,
-      fields: selectedFields,
-    };
-
-    onSave(widget);
+      fields,
+      arrayPath,
+      seriesPath,
+      yField,
+    });
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col">
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+      <div className="bg-white rounded-xl w-full max-w-3xl p-6 space-y-6">
 
-        {/* ===============================
-           Header
-           =============================== */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            {mode === "edit" ? "Edit Widget" : "Add Widget"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-          >
-            ✕
-          </button>
-        </div>
+        <ApiTester
+          name={name}
+          setName={setName}
+          url={url}
+          setUrl={setUrl}
+          interval={interval}
+          setInterval={setInterval}
+          onTest={testApi}
+          apiResult={apiResult}
+        />
 
-        {/* ===============================
-           Content
-           =============================== */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-          <ApiTester
-            name={name}
-            setName={setName}
-            url={url}
-            setUrl={setUrl}
-            interval={interval}
-            setInterval={setInterval}
-            onTest={testApi}
-            apiResult={apiResult}
+        <WidgetTypeSelector value={type} onChange={setType} />
+
+        {/* CARD */}
+        {type === "card" && apiResult?.ok && (
+          <FieldSelector
+            fields={cardFields}
+            selected={fields}
+            onChange={setFields}
           />
+        )}
 
-          <WidgetTypeSelector value={type} onChange={setType} />
+        {/* TABLE */}
+        {type === "table" && apiResult?.ok && (
+          <>
+            <select
+              className="w-full border p-2"
+              value={arrayPath}
+              onChange={(e) => setArrayPath(e.target.value)}
+            >
+              <option value="">Select table source</option>
+              {Object.keys(apiResult.arrays).map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
 
-          {apiResult?.ok && (
-            <FieldSelector
-              fields={availableFields}          // ✅ ALWAYS ARRAY
-              selected={selectedFields}
-              onChange={setSelectedFields}
-            />
-          )}
-        </div>
+            {arrayPath && (
+              <FieldSelector
+                fields={tableColumns.map((c) => ({ path: c, label: c }))}
+                selected={fields}
+                onChange={setFields}
+              />
+            )}
+          </>
+        )}
 
-        {/* ===============================
-           Footer
-           =============================== */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+        {/* CHART */}
+        {type === "chart" && apiResult?.ok && (
+          <>
+            <select
+              className="w-full border p-2"
+              value={seriesPath}
+              onChange={(e) => setSeriesPath(e.target.value)}
+            >
+              <option value="">Select time series</option>
+              {Object.keys(apiResult.series).map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+
+            {seriesPath && (
+              <select
+                className="w-full border p-2"
+                value={yField}
+                onChange={(e) => setYField(e.target.value)}
+              >
+                <option value="">Select Y field</option>
+                {chartFields.map((f) => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </select>
+            )}
+          </>
+        )}
+
+        <div className="flex justify-end gap-3">
+          <button onClick={onClose}>Cancel</button>
           <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-md text-slate-600 dark:text-slate-300"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
+            className="bg-emerald-500 text-white px-4 py-2 rounded"
             disabled={
-              !name.trim() ||
-              !url.trim() ||
-              !apiResult?.ok ||
-              selectedFields.length === 0
+              !name ||
+              !url ||
+              (type === "card" && fields.length === 0) ||
+              (type === "table" && (!arrayPath || fields.length === 0)) ||
+              (type === "chart" && (!seriesPath || !yField))
             }
-            className="px-5 py-2 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-50"
+            onClick={handleSave}
           >
-            {mode === "edit" ? "Save Changes" : "Add Widget"}
+            Add Widget
           </button>
         </div>
       </div>
