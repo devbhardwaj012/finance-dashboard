@@ -1,21 +1,21 @@
 "use client";
 
 export default function FieldSelector({
-  fields,
+  fields = [],
   selected = [],
   onChange,
 }) {
-  // 🛡 Normalize fields → always an array
   const safeFields = Array.isArray(fields) ? fields : [];
+  const safeSelected = Array.isArray(selected) ? selected : [];
 
   function add(fieldPath) {
-    if (!selected.includes(fieldPath)) {
-      onChange([...selected, fieldPath]);
+    if (!safeSelected.includes(fieldPath)) {
+      onChange([...safeSelected, fieldPath]);
     }
   }
 
   function remove(fieldPath) {
-    onChange(selected.filter((f) => f !== fieldPath));
+    onChange(safeSelected.filter((f) => f !== fieldPath));
   }
 
   return (
@@ -31,33 +31,38 @@ export default function FieldSelector({
         <div className="space-y-2 max-h-64 overflow-auto">
           {safeFields.length === 0 && (
             <div className="text-sm text-slate-400">
-              No scalar fields detected
+              No fields detected
             </div>
           )}
 
-          {safeFields.map((field) => (
-            <div
-              key={field.path}
-              className="
-                flex justify-between items-center
-                p-2 rounded-md
-                bg-slate-100 dark:bg-slate-800
-              "
-            >
-              <span className="truncate text-sm text-slate-700 dark:text-slate-200">
-                {field.label}
-              </span>
+          {safeFields.map((field) => {
+            const isSelected = safeSelected.includes(field.path);
 
-              <button
-                type="button"
-                onClick={() => add(field.path)}
-                className="text-emerald-500 font-bold text-lg"
-                title="Add field"
+            return (
+              <div
+                key={field.path}
+                className="flex justify-between items-center p-2 rounded-md bg-slate-100 dark:bg-slate-800"
               >
-                +
-              </button>
-            </div>
-          ))}
+                <span className="truncate text-sm text-slate-700 dark:text-slate-200">
+                  {field.label}
+                </span>
+
+                <button
+                  type="button"
+                  disabled={isSelected}
+                  onClick={() => add(field.path)}
+                  className={`font-bold text-lg ${
+                    isSelected
+                      ? "text-slate-400 cursor-not-allowed"
+                      : "text-emerald-500"
+                  }`}
+                  title={isSelected ? "Already added" : "Add field"}
+                >
+                  +
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -70,23 +75,19 @@ export default function FieldSelector({
         </h4>
 
         <div className="space-y-2">
-          {selected.length === 0 && (
+          {safeSelected.length === 0 && (
             <div className="text-sm text-slate-400">
               No fields selected
             </div>
           )}
 
-          {selected.map((fieldPath) => (
+          {safeSelected.map((fieldPath) => (
             <div
               key={fieldPath}
-              className="
-                flex justify-between items-center
-                p-2 rounded-md
-                bg-slate-200 dark:bg-slate-700
-              "
+              className="flex justify-between items-center p-2 rounded-md bg-slate-200 dark:bg-slate-700"
             >
               <span className="truncate text-sm text-slate-800 dark:text-slate-100">
-                {fieldPath}
+                {fieldPath.replace(/\./g, " → ")}
               </span>
 
               <button

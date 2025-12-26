@@ -10,7 +10,16 @@ export default function CardWidget({
   onDelete,
   onEdit,
 }) {
-  const { name, url, interval, fields } = widget;
+  const {
+    name,
+    url,
+    interval,
+    cardFields = [],   // ✅ correct source
+    fields = [],       // ✅ backward compatibility
+  } = widget;
+
+  // Prefer cardFields, fallback to fields
+  const resolvedFields = cardFields.length > 0 ? cardFields : fields;
 
   const [rawData, setRawData] = useState(null);
   const [flatData, setFlatData] = useState({});
@@ -46,7 +55,6 @@ export default function CardWidget({
     loadData();
 
     if (!interval || interval <= 0) return;
-
     const id = setInterval(loadData, interval * 1000);
     return () => clearInterval(id);
   }, [url, interval]);
@@ -132,8 +140,14 @@ export default function CardWidget({
           <div className="text-sm text-slate-400">Loading…</div>
         )}
 
+        {rawData && resolvedFields.length === 0 && (
+          <div className="text-sm text-slate-400">
+            No fields selected
+          </div>
+        )}
+
         {rawData &&
-          fields.map((fieldPath) => {
+          resolvedFields.map((fieldPath) => {
             const value = flatData[fieldPath];
 
             return (
