@@ -2,42 +2,48 @@
 
 import { useEffect, useState } from "react";
 import { fetchApi } from "@/lib/api/fetchApi";
+import { flattenJson } from "@/lib/api/flattenJson";
 
 export default function CardWidget({
   widget,
   dragListeners,
   onDelete,
-  onEdit, // ⚙️ settings handler (already wired in page.js)
+  onEdit,
 }) {
   const { name, url, interval, fields } = widget;
 
-  const [data, setData] = useState(null);
+  const [rawData, setRawData] = useState(null);
+  const [flatData, setFlatData] = useState({});
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(false);
 
   /* ===============================
-     🔁 Fetch API data
+     🔁 Fetch + flatten API data
      =============================== */
   async function loadData() {
     try {
       setLoading(true);
       setError(null);
+
       const json = await fetchApi(url);
-      setData(json);
+      const flattened = flattenJson(json);
+
+      setRawData(json);
+      setFlatData(flattened);
       setLastUpdated(new Date());
     } catch (err) {
-      setError("Failed to refresh data");
+      setError(err?.message || "Failed to refresh data");
     } finally {
       setLoading(false);
     }
   }
 
   /* ===============================
-     ⏱ Auto-refresh using interval
+     ⏱ Auto-refresh
      =============================== */
   useEffect(() => {
-    loadData(); // initial fetch
+    loadData();
 
     if (!interval || interval <= 0) return;
 
@@ -46,10 +52,24 @@ export default function CardWidget({
   }, [url, interval]);
 
   /* ===============================
-     🧠 Read nested field safely
+     🧠 Render value safely
      =============================== */
-  function readField(obj, path) {
-    return path.split(".").reduce((acc, key) => acc?.[key], obj);
+  function renderValue(value) {
+    if (value == null) return "—";
+
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      return value;
+    }
+
+    return (
+      <pre className="text-xs whitespace-pre-wrap break-all opacity-80 text-right">
+        {JSON.stringify(value, null, 2)}
+      </pre>
+    );
   }
 
   return (
@@ -64,15 +84,12 @@ export default function CardWidget({
             {name}
           </h3>
 
-          {/* Refresh interval badge */}
           <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500">
             {interval}s
           </span>
         </div>
 
-        {/* Controls */}
         <div className="flex items-center gap-3">
-          {/* Drag */}
           <button
             {...dragListeners}
             className="cursor-grab text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
@@ -81,7 +98,6 @@ export default function CardWidget({
             ⠿
           </button>
 
-          {/* Settings */}
           <button
             onClick={() => onEdit(widget)}
             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
@@ -90,7 +106,6 @@ export default function CardWidget({
             ⚙️
           </button>
 
-          {/* Delete */}
           <button
             onClick={onDelete}
             className="text-red-500 hover:text-red-600"
@@ -113,21 +128,29 @@ export default function CardWidget({
           <div className="text-sm text-red-500">{error}</div>
         )}
 
-        {!data && !error && !loading && (
+        {!rawData && !error && !loading && (
           <div className="text-sm text-slate-400">Loading…</div>
         )}
 
-        {data &&
-          fields.map((field) => {
-            const value = readField(data, field);
+        {rawData &&
+          fields.map((fieldPath) => {
+            const value = flatData[fieldPath];
+
             return (
               <div
-                key={field}
-                className="flex justify-between gap-3 text-sm text-slate-700 dark:text-slate-300"
+                key={fieldPath}
+                className="
+                  flex justify-between gap-4
+                  text-sm text-slate-700 dark:text-slate-300
+                  border-b border-slate-100 dark:border-slate-800 pb-1
+                "
               >
-                <span className="truncate">{field}</span>
-                <span className="font-medium">
-                  {value ?? "—"}
+                <span className="truncate max-w-[55%]">
+                  {fieldPath.replace(/\./g, " → ")}
+                </span>
+
+                <span className="font-medium max-w-[45%] text-right">
+                  {renderValue(value)}
                 </span>
               </div>
             );
