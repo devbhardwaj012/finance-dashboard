@@ -5,9 +5,12 @@ import { CSS } from "@dnd-kit/utilities";
 import ResizableWidget from "./ResizableWidget";
 import { useDispatch } from "react-redux";
 import { updateWidget } from "@/lib/store/slices/widgetSlice";
+import useMediaQuery from "@/lib/hooks/useMediaQuery";
 
 export default function SortableWidget({ id, widget, children }) {
   const dispatch = useDispatch();
+  const isSmallScreen = useMediaQuery("(max-width: 768px)");
+
   const {
     attributes,
     listeners,
@@ -24,18 +27,23 @@ export default function SortableWidget({ id, widget, children }) {
   };
 
   const handleResize = (newDimensions) => {
-    dispatch(updateWidget({
-      ...widget,
-      width: newDimensions.width,
-      height: newDimensions.height
-    }));
+    if (isSmallScreen) return;
+
+    dispatch(
+      updateWidget({
+        ...widget,
+        width: newDimensions.width,
+        height: newDimensions.height,
+      })
+    );
   };
 
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
       <ResizableWidget
-        initialWidth={widget.width || null}
-        initialHeight={widget.height || null}
+        initialWidth={isSmallScreen ? null : widget.width}
+        initialHeight={isSmallScreen ? null : widget.height}
+        disableResize={isSmallScreen}
         onResize={handleResize}
       >
         {children({ dragListeners: listeners })}
