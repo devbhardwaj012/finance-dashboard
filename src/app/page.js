@@ -9,10 +9,10 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/layout/Navbar";
 import AddWidgetModal from "@/components/modals/AddWidgetModal";
-import SortableWidget from "@/components/SortableWidget";
-import AddWidgetPlaceholder from "@/components/AddWidgetPlaceholder";
+import SortableWidget from "@/components/widgets/SortableWidget";
+import AddWidgetPlaceholder from "@/components/widgets/AddWidgetPlaceholder";
 
 import {
   addWidget,
