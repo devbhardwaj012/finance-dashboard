@@ -4,34 +4,57 @@ import { useDispatch, useSelector } from "react-redux";
 import { toggleTheme, setTheme } from "@/lib/store/slices/themeSlice";
 import { useEffect, useState } from "react";
 
+import {
+  exportDashboardConfig,
+  importDashboardConfig,
+} from "@/lib/utils/dashboardConfig";
+import { replaceDashboard } from "@/lib/store/slices/widgetSlice";
+
 export default function Navbar({ onAddWidget }) {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme.mode);
   const widgets = useSelector((state) => state.widgets);
+
   const [mounted, setMounted] = useState(false);
-  
+
   const widgetCount = widgets.length;
 
-  // Load theme from localStorage on mount (client-side only)
+  // ✅ EXPORT HANDLER (inside component)
+  function handleExport() {
+    exportDashboardConfig({ widgets, theme });
+  }
+
+  // ✅ IMPORT HANDLER (inside component)
+  async function handleImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const dashboard = await importDashboardConfig(file);
+      dispatch(replaceDashboard({ widgets: dashboard.widgets }));
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  // Theme init
   useEffect(() => {
     setMounted(true);
-    
-    // Read stored theme preference
+
     const storedTheme = localStorage.getItem("theme");
     if (storedTheme && storedTheme !== theme) {
       dispatch(setTheme(storedTheme));
     }
-    
-    // Apply theme immediately
+
     if (storedTheme === "dark") {
       document.documentElement.classList.add("dark");
     }
   }, []);
 
-  // Apply theme changes
+  // Theme sync
   useEffect(() => {
     if (!mounted) return;
-    
+
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
@@ -52,64 +75,40 @@ export default function Navbar({ onAddWidget }) {
             </h1>
             {mounted && widgetCount > 0 && (
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {widgetCount} {widgetCount === 1 ? 'widget' : 'widgets'} live
+                {widgetCount} {widgetCount === 1 ? "widget" : "widgets"} live
               </p>
             )}
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Widget counter badge */}
-          {mounted && widgetCount > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {widgetCount}
-              </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                active
-              </span>
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-            </div>
-          )}
-
           <button
             onClick={() => dispatch(toggleTheme())}
-            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-            suppressHydrationWarning
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             {mounted ? (theme === "dark" ? "🌞" : "🌙") : "🌙"}
           </button>
 
+          <button className="cursor-pointer p-2 border border-gray-400 rounded-md" onClick={handleExport}>Export Dashboard</button>
+
+          <label className="cursor-pointer p-2 border border-gray-400 rounded-md">
+            Import Dashboard
+            <input
+              type="file"
+              accept="application/json"
+              hidden
+              onChange={handleImport}
+            />
+          </label>
+
           <button
             onClick={onAddWidget}
-            className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 transition flex items-center gap-2"
+            className="px-4 py-2 bg-emerald-500 text-white rounded-lg"
           >
-            <span>+</span>
-            <span>Add Widget</span>
+            + Add Widget
           </button>
         </div>
       </div>
     </nav>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
