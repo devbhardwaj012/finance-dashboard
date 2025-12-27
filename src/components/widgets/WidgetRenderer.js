@@ -1,9 +1,12 @@
+"use client";
 import CardWidget from "./CardWidget";
 import TableWidget from "./TableWidget";
 import ChartWidget from "./ChartWidget";
 
-export default function WidgetRenderer({ widget }) {
-  if (widget.type === "table") return <TableWidget widget={widget} />;
-  if (widget.type === "chart") return <ChartWidget widget={widget} />;
-  return <CardWidget widget={widget} />;
+export default function WidgetRenderer({ widget, dragListeners, onEdit, onDelete }) {
+  const props = { widget, dragListeners, onEdit, onDelete };
+  
+  if (widget.type === "table") return <TableWidget {...props} />;
+  if (widget.type === "chart") return <ChartWidget {...props} />;
+  return <CardWidget {...props} />;
 }

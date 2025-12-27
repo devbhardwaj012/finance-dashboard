@@ -20,17 +20,15 @@ export default function FieldSelector({
 
   return (
     <div className="grid grid-cols-2 gap-4 mt-4">
-      {/* ===============================
-          Available Fields
-         =============================== */}
+      {/* Available Fields */}
       <div>
         <h4 className="font-medium mb-2 text-slate-700 dark:text-slate-300">
           Available Fields
         </h4>
 
-        <div className="space-y-2 max-h-64 overflow-auto">
+        <div className="space-y-2 max-h-64 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-md p-2">
           {safeFields.length === 0 && (
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-slate-400 text-center py-4">
               No fields detected
             </div>
           )}
@@ -41,9 +39,9 @@ export default function FieldSelector({
             return (
               <div
                 key={field.path}
-                className="flex justify-between items-center p-2 rounded-md bg-slate-100 dark:bg-slate-800"
+                className="flex justify-between items-center p-2 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
               >
-                <span className="truncate text-sm text-slate-700 dark:text-slate-200">
+                <span className="truncate text-sm text-slate-700 dark:text-slate-200 flex-1 mr-2">
                   {field.label}
                 </span>
 
@@ -51,10 +49,10 @@ export default function FieldSelector({
                   type="button"
                   disabled={isSelected}
                   onClick={() => add(field.path)}
-                  className={`font-bold text-lg ${
+                  className={`font-bold text-lg px-2 ${
                     isSelected
                       ? "text-slate-400 cursor-not-allowed"
-                      : "text-emerald-500"
+                      : "text-emerald-500 hover:text-emerald-600"
                   }`}
                   title={isSelected ? "Already added" : "Add field"}
                 >
@@ -66,17 +64,15 @@ export default function FieldSelector({
         </div>
       </div>
 
-      {/* ===============================
-          Selected Fields
-         =============================== */}
+      {/* Selected Fields */}
       <div>
         <h4 className="font-medium mb-2 text-slate-700 dark:text-slate-300">
           Selected Fields
         </h4>
 
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-64 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-md p-2">
           {safeSelected.length === 0 && (
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-slate-400 text-center py-4">
               No fields selected
             </div>
           )}
@@ -84,16 +80,16 @@ export default function FieldSelector({
           {safeSelected.map((fieldPath) => (
             <div
               key={fieldPath}
-              className="flex justify-between items-center p-2 rounded-md bg-slate-200 dark:bg-slate-700"
+              className="flex justify-between items-center p-2 rounded-md bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition"
             >
-              <span className="truncate text-sm text-slate-800 dark:text-slate-100">
+              <span className="truncate text-sm text-slate-800 dark:text-slate-100 flex-1 mr-2">
                 {fieldPath.replace(/\./g, " → ")}
               </span>
 
               <button
                 type="button"
                 onClick={() => remove(fieldPath)}
-                className="text-red-500 font-bold"
+                className="text-red-500 hover:text-red-600 font-bold px-2"
                 title="Remove field"
               >
                 ✕

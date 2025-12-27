@@ -10,16 +10,17 @@ export default function SortableWidget({ id, children }) {
     setNodeRef,
     transform,
     transition,
+    isDragging,
   } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
-      {/* Drag handle injected via render prop */}
       {children({ dragListeners: listeners })}
     </div>
   );

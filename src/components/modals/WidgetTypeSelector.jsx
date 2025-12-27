@@ -1,0 +1,36 @@
+"use client";
+
+export default function WidgetTypeSelector({ value, onChange }) {
+  const types = [
+    { id: "card", label: "Card", icon: "📊", desc: "Display individual values" },
+    { id: "table", label: "Table", icon: "📋", desc: "Show data in rows" },
+    { id: "chart", label: "Chart", icon: "📈", desc: "Visualize time series" },
+  ];
+
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
+        Widget Type
+      </label>
+      
+      <div className="grid grid-cols-3 gap-3">
+        {types.map((type) => (
+          <button
+            key={type.id}
+            type="button"
+            onClick={() => onChange(type.id)}
+            className={`p-3 rounded-lg text-sm border-2 transition ${
+              value === type.id
+                ? "bg-emerald-500 text-white border-emerald-500"
+                : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-emerald-400"
+            }`}
+          >
+            <div className="text-2xl mb-1">{type.icon}</div>
+            <div className="font-semibold">{type.label}</div>
+            <div className="text-xs opacity-80 mt-1">{type.desc}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
