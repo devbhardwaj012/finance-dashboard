@@ -1,13 +1,21 @@
-// Your version (correct):
-import { getHeadersForApi } from "./apiConfig";
-
+// Remove direct fetch - use server proxy instead
 export async function fetchApi(url, apiKey = null, apiKeyHeader = "X-Api-Key", apiKeyPrefix = "") {
-  const headers = getHeadersForApi(url, apiKey, apiKeyHeader, apiKeyPrefix);
-  const res = await fetch(url, { headers });
+  const res = await fetch('/api/proxy', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      url,
+      apiKey,
+      apiKeyHeader,
+      apiKeyPrefix,
+    }),
+  });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API Error ${res.status}: ${text || res.statusText}`);
+    const errorData = await res.json();
+    throw new Error(errorData.error || `Request failed with status ${res.status}`);
   }
 
   return res.json();
