@@ -315,7 +315,7 @@ import { fetchApi } from "@/lib/api/fetchApi";
 import { readPath } from "@/lib/api/validateApi";
 
 export default function CardWidget({ widget, dragListeners, onDelete, onEdit }) {
-  const { name, url, interval, cardFields = [] } = widget;
+  const { name, url, apiKey, apiKeyHeader, apiKeyPrefix, interval, cardFields = [] } = widget;
 
   const [rawData, setRawData] = useState(null);
   const [error, setError] = useState(null);
@@ -327,7 +327,7 @@ export default function CardWidget({ widget, dragListeners, onDelete, onEdit }) 
     try {
       setLoading(true);
       setError(null);
-      const json = await fetchApi(url);
+      const json = await fetchApi(url, apiKey, apiKeyHeader, apiKeyPrefix);
       setRawData(json);
       setLastUpdated(new Date());
       setIsInitialLoad(false);
@@ -363,7 +363,7 @@ export default function CardWidget({ widget, dragListeners, onDelete, onEdit }) 
   return (
     <div
       {...dragListeners}
-      className="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing"
+      className="relative w-full h-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing flex flex-col"
     >
       {/* Updating badge */}
       {loading && !isInitialLoad && (
@@ -407,7 +407,7 @@ export default function CardWidget({ widget, dragListeners, onDelete, onEdit }) 
       </div>
 
       {/* Content */}
-      <div className="space-y-2">
+      <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
         {error && (
           <div className="text-sm text-red-500 bg-red-50 p-2 rounded">
             {error}

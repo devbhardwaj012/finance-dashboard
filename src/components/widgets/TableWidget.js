@@ -674,7 +674,7 @@ import { fetchApi } from "@/lib/api/fetchApi";
 import { readPath } from "@/lib/api/validateApi";
 
 export default function TableWidget({ widget, dragListeners, onEdit, onDelete }) {
-  const { name, url, interval, arrayPath, tableFields = [] } = widget;
+  const { name, url, apiKey, apiKeyHeader, apiKeyPrefix, interval, arrayPath, tableFields = [] } = widget;
   const ROWS_PER_PAGE = 10;
 
   const [rows, setRows] = useState([]);
@@ -690,7 +690,7 @@ export default function TableWidget({ widget, dragListeners, onEdit, onDelete })
       setLoading(true);
       setError(null);
 
-      const json = await fetchApi(url);
+      const json = await fetchApi(url, apiKey, apiKeyHeader, apiKeyPrefix);
       const data = readPath(json, arrayPath);
 
       if (!Array.isArray(data)) {
@@ -753,7 +753,7 @@ export default function TableWidget({ widget, dragListeners, onEdit, onDelete })
   return (
     <div
       {...dragListeners}
-      className="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing"
+      className="relative w-full h-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing flex flex-col"
     >
       {/* Refresh indicator */}
       {loading && !isInitialLoad && (
@@ -807,10 +807,10 @@ export default function TableWidget({ widget, dragListeners, onEdit, onDelete })
 
       {/* Table */}
       {!error && rows.length > 0 && (
-        <>
-          <div className="overflow-x-auto">
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-auto">
             <table className="w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 bg-white dark:bg-slate-900">
                 <tr className="border-b-2 border-slate-200 dark:border-slate-700">
                   {tableFields.map((f) => (
                     <th
@@ -844,7 +844,7 @@ export default function TableWidget({ widget, dragListeners, onEdit, onDelete })
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500">
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 flex-shrink-0">
               <span>
                 Page {page + 1} of {totalPages} • {rows.length} rows
               </span>
@@ -870,7 +870,7 @@ export default function TableWidget({ widget, dragListeners, onEdit, onDelete })
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {!loading && !error && rows.length === 0 && (

@@ -440,7 +440,7 @@ function debugError(...args) {
 }
 
 export default function ChartWidget({ widget, dragListeners, onEdit, onDelete }) {
-  const { name, url, interval, seriesPath, yField } = widget;
+  const { name, url, apiKey, apiKeyHeader, apiKeyPrefix, interval, seriesPath, yField } = widget;
 
   const [data, setData] = useState([]);
   const [error, setError] = useState(null);
@@ -458,7 +458,7 @@ export default function ChartWidget({ widget, dragListeners, onEdit, onDelete })
       setLoading(true);
       setError(null);
 
-      const json = await fetchApi(url);
+      const json = await fetchApi(url, apiKey, apiKeyHeader, apiKeyPrefix);
 
       debugLog("=== CHART LOAD DEBUG ===");
       debugLog("Widget config:", { seriesPath, yField });
@@ -561,7 +561,7 @@ export default function ChartWidget({ widget, dragListeners, onEdit, onDelete })
   return (
     <div
       {...dragListeners}
-      className="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing"
+      className="relative w-full h-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing flex flex-col"
     >
       {loading && !isInitialLoad && (
         <div className="absolute top-2 right-2 z-10">
@@ -624,7 +624,7 @@ export default function ChartWidget({ widget, dragListeners, onEdit, onDelete })
 
       {/* Chart */}
       {!error && data.length > 0 && (
-        <div className="h-72">
+        <div className="flex-1 min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />

@@ -386,9 +386,9 @@ export default function Home() {
               items={widgets.map((w) => w.id)}
               strategy={rectSortingStrategy}
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="flex flex-wrap gap-6">
                 {widgets.map((widget) => (
-                  <SortableWidget key={widget.id} id={widget.id}>
+                  <SortableWidget key={widget.id} id={widget.id} widget={widget}>
                     {({ dragListeners }) =>
                       renderWidget(widget, dragListeners)
                     }
