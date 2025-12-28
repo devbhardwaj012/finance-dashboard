@@ -1,4 +1,3 @@
-
 "use client";
 import { useState, useRef, useCallback, useEffect } from "react";
 
@@ -11,9 +10,13 @@ export default function ResizableWidget({
   onResize,
   disableResize = false,
 }) {
+  // Set better default dimensions for charts
+  const defaultWidth = 450;
+  const defaultHeight = 300;
+
   const [dimensions, setDimensions] = useState({
-    width: initialWidth,
-    height: initialHeight,
+    width: initialWidth || (disableResize ? null : defaultWidth),
+    height: initialHeight || (disableResize ? null : defaultHeight),
   });
 
   const [isResizing, setIsResizing] = useState(false);
@@ -30,8 +33,11 @@ export default function ResizableWidget({
   useEffect(() => {
     if (disableResize) {
       setDimensions({ width: null, height: null });
+    } else if (!initialWidth && !initialHeight) {
+      // Ensure default dimensions are set for desktop
+      setDimensions({ width: defaultWidth, height: defaultHeight });
     }
-  }, [disableResize]);
+  }, [disableResize, initialWidth, initialHeight]);
 
   const handleMouseDown = useCallback(
     (e, direction) => {
@@ -43,8 +49,8 @@ export default function ResizableWidget({
       setIsResizing(true);
 
       const rect = widgetRef.current?.getBoundingClientRect();
-      const currentWidth = dimensions.width || rect?.width || 350;
-      const currentHeight = dimensions.height || rect?.height || 250;
+      const currentWidth = dimensions.width || rect?.width || defaultWidth;
+      const currentHeight = dimensions.height || rect?.height || defaultHeight;
 
       resizeRef.current = {
         startX: e.clientX,
