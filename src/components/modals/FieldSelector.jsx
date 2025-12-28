@@ -1,26 +1,49 @@
 "use client";
 
+/**
+ * FieldSelector
+ *
+ * Dual-list selector used for choosing fields from an API response.
+ * Responsibilities:
+ * - Display available fields derived from API analysis
+ * - Allow adding fields to the selected list
+ * - Allow removing fields from the selected list
+ * - Prevent duplicate field selection
+ *
+ * This component is intentionally stateless and relies on
+ * controlled props for all data mutations.
+ */
 export default function FieldSelector({
   fields = [],
   selected = [],
   onChange,
 }) {
+  /**
+   * Defensive normalization to ensure predictable behavior
+   * even if incorrect data is passed from the parent.
+   */
   const safeFields = Array.isArray(fields) ? fields : [];
   const safeSelected = Array.isArray(selected) ? selected : [];
 
+  /**
+   * Adds a field to the selected list if it is not already present.
+   */
   function add(fieldPath) {
     if (!safeSelected.includes(fieldPath)) {
       onChange([...safeSelected, fieldPath]);
     }
   }
 
+  /**
+   * Removes a field from the selected list.
+   */
   function remove(fieldPath) {
     onChange(safeSelected.filter((f) => f !== fieldPath));
   }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-      {/* AVAILABLE FIELDS */}
+      {/* Available fields list */}
       <div className="flex flex-col">
         <h4 className="font-medium mb-2 text-slate-700 dark:text-slate-300">
           Available Fields
@@ -64,7 +87,7 @@ export default function FieldSelector({
         </div>
       </div>
 
-      {/* SELECTED FIELDS */}
+      {/* Selected fields list */}
       <div className="flex flex-col">
         <h4 className="font-medium mb-2 text-slate-700 dark:text-slate-300">
           Selected Fields

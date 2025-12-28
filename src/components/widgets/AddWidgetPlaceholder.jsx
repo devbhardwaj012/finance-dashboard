@@ -1,5 +1,18 @@
 "use client";
 
+/**
+ * AddWidgetPlaceholder
+ *
+ * Visual placeholder displayed in the dashboard when users
+ * can add a new widget.
+ *
+ * Responsibilities:
+ * - Provide a clear call-to-action for adding widgets
+ * - Maintain consistent sizing with other widgets
+ * - Offer visual affordance through hover states
+ *
+ * This component is intentionally simple and stateless.
+ */
 export default function AddWidgetPlaceholder({ onClick }) {
   return (
     <button

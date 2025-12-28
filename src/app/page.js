@@ -25,71 +25,112 @@ import CardWidget from "@/components/widgets/CardWidget";
 import TableWidget from "@/components/widgets/TableWidget";
 import ChartWidget from "@/components/widgets/ChartWidget";
 
+/**
+ * Helper responsible for returning the initial widget configuration.
+ * It internally decides whether to load from localStorage or fall back
+ * to the default dashboard configuration.
+ */
+import { getInitialWidgets } from "@/lib/config/defaultDashboard";
+
+/**
+ * Storage key used to persist dashboard widgets in localStorage.
+ */
 const STORAGE_KEY = "dashboard-widgets";
 
+/**
+ * Home
+ *
+ * Root dashboard page responsible for:
+ * - Rendering widgets
+ * - Managing drag-and-drop reordering
+ * - Persisting widget state
+ * - Handling widget creation, editing, and deletion
+ */
 export default function Home() {
   const dispatch = useDispatch();
   const widgets = useSelector((state) => state.widgets);
-  
+
+  /**
+   * UI state for widget creation/editing modal.
+   */
   const [showModal, setShowModal] = useState(false);
   const [editingWidget, setEditingWidget] = useState(null);
+
+  /**
+   * Used to prevent hydration mismatch by ensuring client-only logic
+   * (such as localStorage access) runs after mount.
+   */
   const [mounted, setMounted] = useState(false);
 
-  /* 🔁 Load from localStorage on mount */
+  /**
+   * Initialize dashboard widgets on first client render.
+   * Widgets are loaded from localStorage if available,
+   * otherwise the default configuration is used.
+   */
   useEffect(() => {
     setMounted(true);
-    
+
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const loadedWidgets = JSON.parse(stored);
-        dispatch(reorderWidgets(loadedWidgets));
-      }
-    } catch (error) {
-      console.error("Failed to load widgets from localStorage:", error);
+      const initialWidgets = getInitialWidgets(STORAGE_KEY);
+      dispatch(reorderWidgets(initialWidgets));
+    } catch {
+      // Fail silently to avoid breaking the dashboard UI
     }
   }, [dispatch]);
 
-  /* 💾 Save to localStorage whenever widgets change */
+  /**
+   * Persist widgets to localStorage whenever the widget state changes.
+   * This effect is skipped during the initial render phase.
+   */
   useEffect(() => {
     if (!mounted) return;
-    
+
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(widgets));
-    } catch (error) {
-      console.error("Failed to save widgets to localStorage:", error);
+    } catch {
+      // Fail silently to avoid blocking UI updates
     }
   }, [widgets, mounted]);
 
-  /* 🧲 Drag & Drop */
+  /**
+   * Handles widget reordering after a drag-and-drop interaction.
+   * Computes old and new positions and updates the store accordingly.
+   */
   function handleDragEnd(event) {
     const { active, over } = event;
+
     if (!over || active.id === over.id) return;
 
     const oldIndex = widgets.findIndex((w) => w.id === active.id);
     const newIndex = widgets.findIndex((w) => w.id === over.id);
-    
+
     if (oldIndex !== -1 && newIndex !== -1) {
       const reordered = arrayMove(widgets, oldIndex, newIndex);
       dispatch(reorderWidgets(reordered));
     }
   }
 
-  /* 🗑 Delete */
+  /**
+   * Deletes a widget after user confirmation.
+   */
   function handleDelete(id) {
     if (confirm("Are you sure you want to delete this widget?")) {
       dispatch(removeWidget(id));
     }
   }
 
-  /* ✏️ Edit - FIXED */
+  /**
+   * Opens the widget modal in edit mode with pre-filled data.
+   */
   function handleEdit(widget) {
-    console.log('Opening edit for widget:', widget);
     setEditingWidget(widget);
     setShowModal(true);
   }
 
-  /* 💾 Save (create OR update) */
+  /**
+   * Saves widget data.
+   * Creates a new widget or updates an existing one depending on mode.
+   */
   function handleSave(widget) {
     if (editingWidget) {
       dispatch(updateWidget(widget));
@@ -101,13 +142,15 @@ export default function Home() {
     setShowModal(false);
   }
 
-  /* 🎨 Render individual widget - FIXED */
+  /**
+   * Renders the correct widget component based on its type.
+   */
   function renderWidget(widget, dragListeners) {
     const props = {
       widget,
       dragListeners,
       onDelete: () => handleDelete(widget.id),
-      onEdit: () => handleEdit(widget), // ✅ FIXED: Now passing function that calls handleEdit
+      onEdit: () => handleEdit(widget),
     };
 
     if (widget.type === "table") return <TableWidget {...props} />;
@@ -115,7 +158,10 @@ export default function Home() {
     return <CardWidget {...props} />;
   }
 
-  // Prevent hydration mismatch
+  /**
+   * Skeleton UI rendered before client hydration completes.
+   * Prevents server/client markup mismatch.
+   */
   if (!mounted) {
     return (
       <main className="min-h-screen">
@@ -159,13 +205,15 @@ export default function Home() {
               items={widgets.map((w) => w.id)}
               strategy={rectSortingStrategy}
             >
-              <div className="flex flex-wrap gap-6">
+              <div className="flex flex-wrap gap-6 justify-start items-start">
                 {widgets.map((widget) => (
-                  <SortableWidget key={widget.id} id={widget.id} widget={widget}>
-                    {({ dragListeners }) =>
-                      renderWidget(widget, dragListeners)
-                    }
-                  </SortableWidget>
+                  <div key={widget.id} className="flex-shrink-0 min-w-0">
+                    <SortableWidget id={widget.id} widget={widget}>
+                      {({ dragListeners }) =>
+                        renderWidget(widget, dragListeners)
+                      }
+                    </SortableWidget>
+                  </div>
                 ))}
 
                 <AddWidgetPlaceholder onClick={() => setShowModal(true)} />

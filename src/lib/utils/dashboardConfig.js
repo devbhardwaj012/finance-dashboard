@@ -1,3 +1,15 @@
+/**
+ * exportDashboardConfig
+ *
+ * Exports the current dashboard configuration to a downloadable JSON file.
+ *
+ * Responsibilities:
+ * - Capture widget state and theme preference
+ * - Attach versioning metadata for forward compatibility
+ * - Trigger a client-side file download
+ *
+ * The exported file can later be imported to restore the dashboard.
+ */
 export function exportDashboardConfig({ widgets, theme }) {
   const data = {
     version: 1,
@@ -22,6 +34,18 @@ export function exportDashboardConfig({ widgets, theme }) {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * importDashboardConfig
+ *
+ * Imports a previously exported dashboard configuration file.
+ *
+ * Responsibilities:
+ * - Read and parse the JSON file
+ * - Validate the expected structure and version
+ * - Return dashboard data for state restoration
+ *
+ * Throws an error if the file format is invalid.
+ */
 export async function importDashboardConfig(file) {
   const text = await file.text();
   const parsed = JSON.parse(text);

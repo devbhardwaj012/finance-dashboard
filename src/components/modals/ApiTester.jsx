@@ -1,6 +1,19 @@
 "use client";
+
 import { useState } from "react";
 
+/**
+ * ApiTester
+ *
+ * Form section responsible for:
+ * - Collecting API connection details
+ * - Validating the API endpoint
+ * - Displaying API test results or errors
+ * - Configuring refresh interval for the widget
+ *
+ * This component does not perform API calls directly.
+ * It delegates testing to the parent via the onTest callback.
+ */
 export default function ApiTester({
   name,
   setName,
@@ -18,8 +31,16 @@ export default function ApiTester({
   apiResult,
   loading,
 }) {
+  /**
+   * Local validation error state.
+   * Used only for client-side checks before API testing.
+   */
   const [localError, setLocalError] = useState(null);
 
+  /**
+   * Triggers API validation.
+   * Performs basic URL validation before delegating to the parent handler.
+   */
   async function handleTest() {
     setLocalError(null);
 
@@ -30,14 +51,14 @@ export default function ApiTester({
 
     try {
       await onTest();
-    } catch (err) {
+    } catch {
       setLocalError("Unexpected error while testing API");
     }
   }
 
   return (
     <div className="space-y-4">
-      {/* Widget Name */}
+      {/* Widget name input */}
       <div>
         <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
           Widget Name <span className="text-red-500">*</span>
@@ -50,7 +71,7 @@ export default function ApiTester({
         />
       </div>
 
-      {/* API URL */}
+      {/* API URL input and test action */}
       <div>
         <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
           API URL <span className="text-red-500">*</span>
@@ -73,7 +94,7 @@ export default function ApiTester({
         </div>
       </div>
 
-      {/* API Key */}
+      {/* API key input */}
       <div>
         <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
           API Key (optional)
@@ -90,7 +111,7 @@ export default function ApiTester({
         </p>
       </div>
 
-      {/* API Key Header */}
+      {/* API key header name */}
       <div>
         <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
           API Key Header Name
@@ -107,10 +128,11 @@ export default function ApiTester({
         </p>
       </div>
 
-      {/* API Key Prefix */}
+      {/* API key prefix */}
       <div>
         <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
-          API Key Prefix <span className="text-slate-400 font-normal">(optional)</span>
+          API Key Prefix{" "}
+          <span className="text-slate-400 font-normal">(optional)</span>
         </label>
         <input
           type="text"
@@ -124,7 +146,7 @@ export default function ApiTester({
         </p>
       </div>
 
-      {/* Status Messages */}
+      {/* API test result or error status */}
       {(localError || apiResult) && (
         <div
           className={`px-4 py-2 rounded-md text-sm ${
@@ -148,7 +170,7 @@ export default function ApiTester({
         </div>
       )}
 
-      {/* Refresh Interval */}
+      {/* Refresh interval configuration */}
       <div>
         <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
           Refresh Interval (seconds)
@@ -160,15 +182,13 @@ export default function ApiTester({
           value={interval}
           onChange={(e) => {
             const value = e.target.value;
-            // allow typing freely
             setInterval(value === "" ? "" : Number(value));
           }}
           onBlur={() => {
-            // clamp ONLY when user finishes typing
             if (!interval || interval < 5) setInterval(5);
             else if (interval > 3600) setInterval(3600);
           }}
-          onWheel={(e) => e.target.blur()} // prevent scroll changes
+          onWheel={(e) => e.target.blur()}
           className="w-full px-3 py-2 rounded-md border bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none"
         />
         <p className="text-xs text-slate-500 mt-1">

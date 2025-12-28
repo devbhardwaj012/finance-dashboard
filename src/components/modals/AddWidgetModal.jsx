@@ -1,39 +1,76 @@
 "use client";
+
 import { useEffect, useMemo, useState } from "react";
 import { validateApi } from "@/lib/api/validateApi";
+
 import ApiTester from "./ApiTester";
 import FieldSelector from "./FieldSelector";
 import WidgetTypeSelector from "./WidgetTypeSelector";
 
+/**
+ * AddWidgetModal
+ *
+ * Modal responsible for creating and editing dashboard widgets.
+ * Responsibilities:
+ * - Collect widget metadata (name, refresh interval, API config)
+ * - Validate API responses
+ * - Infer API structure (scalars, arrays, series)
+ * - Guide the user in selecting compatible widget types and fields
+ * - Construct a widget configuration object and return it to the caller
+ */
 export default function AddWidgetModal({
   mode = "create",
   initialData = null,
   onClose,
   onSave,
 }) {
+  /**
+   * Core widget metadata
+   */
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [apiKeyHeader, setApiKeyHeader] = useState("X-Api-Key");
   const [apiKeyPrefix, setApiKeyPrefix] = useState("");
   const [interval, setInterval] = useState(30);
+
+  /**
+   * API testing state
+   */
   const [testingApi, setTestingApi] = useState(false);
-  const [type, setType] = useState("card");
   const [apiResult, setApiResult] = useState(null);
+
+  /**
+   * Widget type selection
+   */
+  const [type, setType] = useState("card");
+
+  /**
+   * Field search filter used across selectors
+   */
   const [fieldSearch, setFieldSearch] = useState("");
 
-  // CARD
+  /**
+   * Card widget configuration
+   */
   const [cardFields, setCardFields] = useState([]);
 
-  // TABLE
+  /**
+   * Table widget configuration
+   */
   const [arrayPath, setArrayPath] = useState("");
   const [tableFields, setTableFields] = useState([]);
 
-  // CHART
+  /**
+   * Chart widget configuration
+   */
   const [seriesPath, setSeriesPath] = useState("");
   const [yField, setYField] = useState("");
 
-  /* Prefill for edit mode */
+  /**
+   * Prefill all fields when opening the modal in edit mode.
+   * Automatically re-validates the API to restore field selections.
+   */
   useEffect(() => {
     if (mode === "edit" && initialData) {
       setName(initialData.name);
@@ -50,7 +87,6 @@ export default function AddWidgetModal({
       setSeriesPath(initialData.seriesPath || "");
       setYField(initialData.yField || "");
 
-      // Auto-test API in edit mode
       if (initialData.url) {
         validateApi(
           initialData.url,
@@ -62,15 +98,24 @@ export default function AddWidgetModal({
     }
   }, [mode, initialData]);
 
+  /**
+   * Reset field search when widget type changes.
+   */
   useEffect(() => {
     setFieldSearch("");
   }, [type]);
 
+  /**
+   * Reset field search when a new API response is loaded.
+   */
   useEffect(() => {
     setFieldSearch("");
   }, [apiResult]);
 
-  /* Reset fields when type changes */
+  /**
+   * Reset widget-specific configuration when switching widget type
+   * in create mode to avoid cross-type leakage.
+   */
   useEffect(() => {
     if (mode === "edit") return;
 
@@ -81,16 +126,23 @@ export default function AddWidgetModal({
     setYField("");
   }, [type, mode]);
 
-  /* Test API */
+  /**
+   * Triggers API validation and parses the response into
+   * scalars, arrays, and time series.
+   */
   async function testApi() {
     setApiResult(null);
     setTestingApi(true);
 
     try {
-      const result = await validateApi(url, apiKey, apiKeyHeader, apiKeyPrefix);
+      const result = await validateApi(
+        url,
+        apiKey,
+        apiKeyHeader,
+        apiKeyPrefix
+      );
       setApiResult(result);
 
-      // Reset selections ONLY in create mode
       if (mode !== "edit") {
         setCardFields([]);
         setArrayPath("");
@@ -103,7 +155,10 @@ export default function AddWidgetModal({
     }
   }
 
-  /* Derived options */
+  /**
+   * Scalar field options derived from API response.
+   * Used by Card widgets.
+   */
   const scalarOptions = useMemo(() => {
     if (!apiResult?.ok) return [];
 
@@ -115,6 +170,9 @@ export default function AddWidgetModal({
       }));
   }, [apiResult, fieldSearch]);
 
+  /**
+   * Table column options derived from the selected array path.
+   */
   const tableColumns = useMemo(() => {
     if (!arrayPath || !apiResult?.arrays[arrayPath]) return [];
 
@@ -128,6 +186,9 @@ export default function AddWidgetModal({
       }));
   }, [arrayPath, apiResult, fieldSearch]);
 
+  /**
+   * Y-axis field options derived from the selected time series.
+   */
   const chartYFields = useMemo(() => {
     if (!seriesPath || !apiResult?.series[seriesPath]) return [];
 
@@ -142,7 +203,9 @@ export default function AddWidgetModal({
     );
   }, [seriesPath, apiResult, fieldSearch]);
 
-  /* Check API compatibility with widget types */
+  /**
+   * Determines which widget types are compatible with the API response.
+   */
   const compatibility = useMemo(() => {
     if (!apiResult?.ok) return { card: true, table: true, chart: true };
 
@@ -157,7 +220,10 @@ export default function AddWidgetModal({
     };
   }, [apiResult]);
 
-  /* Save */
+  /**
+   * Constructs the final widget configuration object
+   * and passes it to the parent component.
+   */
   function handleSave() {
     const widget = {
       id: initialData?.id ?? crypto.randomUUID(),
@@ -187,7 +253,10 @@ export default function AddWidgetModal({
     onSave(widget);
   }
 
-  /* Validation */
+  /**
+   * Determines whether the widget configuration is valid
+   * and can be saved.
+   */
   const canSave =
     name &&
     url &&
@@ -196,6 +265,8 @@ export default function AddWidgetModal({
       (type === "table" && arrayPath && tableFields.length > 0) ||
       (type === "chart" && seriesPath && yField));
 
+
+      
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
       <div className="relative bg-white dark:bg-slate-900 rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl">
