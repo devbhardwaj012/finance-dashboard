@@ -1,155 +1,122 @@
-Finance Dashboard
-A configurable dashboard built with Next.js that allows users to create, arrange, and persist data widgets from any JSON-based REST API.
+# Finance Dashboard
 
-The project focuses on data-driven widget configuration, clean architecture, and correctness. It is not limited to finance APIs and works with any structured JSON response.
+A configurable dashboard application built with Next.js that enables users to create, arrange, and persist data visualization widgets from any JSON-based REST API. The system dynamically analyzes API responses and generates appropriate widget configurations without requiring hardcoded data schemas.
 
-Tech Stack
-Framework: Next.js (App Router)
+## Overview
 
-UI Library: React
+This dashboard provides a flexible framework for consuming and visualizing data from arbitrary REST APIs. It automatically inspects API response structures, identifies data patterns, and presents configuration options for creating widgets. The application supports multiple visualization types and maintains state persistence through browser storage.
 
-State Management: Redux Toolkit
+## Technology Stack
 
-Styling: Tailwind CSS
+- **Framework:** Next.js (App Router)
+- **UI Library:** React
+- **State Management:** Redux Toolkit
+- **Styling:** Tailwind CSS
+- **Drag and Drop:** dnd-kit
+- **Data Visualization:** Recharts
 
-Drag & Drop: dnd-kit
+## Key Capabilities
 
-Charts: Recharts
+The application connects to REST APIs returning JSON responses, performs structural analysis of the data, and generates appropriate widget configurations. Users can create customized visualizations, arrange them through drag-and-drop interactions, configure automatic refresh intervals, and persist their dashboard configurations locally.
 
-What This Project Does
-Connects to any REST API that returns JSON.
+The system operates entirely client-side with no backend database requirements. All API integrations are handled through a server-side proxy layer that manages authentication and CORS concerns.
 
-Analyzes the API response structure dynamically.
+## Widget Types
 
-Allows users to create widgets based on detected data.
+### Card Widget
 
-Supports drag, resize, auto-refresh, theming, and persistence.
+Displays scalar values extracted from API responses. Supports multiple field selection with automatic formatting for numeric and percentage values. Suitable for key metrics and summary statistics.
 
-Stores dashboard state locally in the browser.
+### Table Widget
 
-Note: There is no backend database and no hardcoded finance logic.
+Renders array-based data in tabular format. Features user-selectable columns and built-in pagination displaying ten rows per page. Appropriate for structured datasets and record listings.
 
-Core Features
-Widget Types
-The dashboard currently supports three widget types:
+### Chart Widget
 
-Card Widget
+Visualizes time-series data using line charts. Supports both object-based time series with date keys and array-based time series with auto-detected date fields. Allows selection of numeric fields for the Y-axis.
 
-Displays scalar values (numbers or strings).
+## API Integration
 
-Multiple fields can be selected.
+All API requests are routed through a server-side proxy to ensure security. API credentials are never exposed to the browser environment. The system supports configurable authentication mechanisms including custom header names and Bearer or ApiKey prefixes. CORS policies are handled transparently through the proxy layer.
 
-Automatic formatting for numbers and percentages.
+## Data Validation System
 
-Table Widget
+The application includes a comprehensive validation layer that traverses complete JSON response structures and classifies data into three categories: scalars for card widgets, arrays for table widgets, and time series for chart widgets. The validation system generates dot-notation paths dynamically for configuration purposes. This logic is centralized in the `validateApi` function and serves as the foundation for all widget creation.
 
-Displays array-based data.
+## Dashboard Management
 
-User-selectable columns.
+Users can perform standard CRUD operations on widgets and reorder them through drag-and-drop interactions. The layout responds to different screen sizes on desktop devices. Dashboard state persists across sessions using localStorage. Widgets refresh automatically at user-defined intervals. Complete dashboard configurations can be exported to JSON files and imported for portability.
 
-Built-in pagination (10 rows per page).
+## Theme Support
 
-Chart Widget
+The application supports light and dark color schemes managed through Redux state. The implementation ensures proper hydration behavior in Next.js server-side rendering contexts.
 
-Displays time-series data using a line chart.
+## Project Structure
 
-Supports object-based time series (date keys) and array-based time series (auto-detected date field).
-
-Numeric Y-axis selection.
-
-API Handling & Security
-All API requests go through a server-side proxy.
-
-API keys are never exposed to the browser.
-
-Supports configurable authentication (Custom header names, Bearer/ApiKey prefixes).
-
-Handles CORS safely via the proxy.
-
-Smart API Validation
-The project includes a robust API validation layer that:
-
-Traverses the full JSON response.
-
-Classifies data into Scalars (Cards), Arrays (Tables), and Time series (Charts).
-
-Generates dot-paths dynamically for configuration.
-
-This logic lives in validateApi and serves as the foundation of the dashboard.
-
-Dashboard Behavior
-Operations: Widgets can be added, edited, deleted, and reordered via drag-and-drop.
-
-Layout: Responsive resizing on desktop screens.
-
-Persistence: Dashboard state is persisted in localStorage.
-
-Sync: Widgets auto-refresh at configurable intervals.
-
-Portability: Import and export dashboard configuration as JSON.
-
-Theme Support
-Light and dark mode supported.
-
-Theme managed using Redux.
-
-Hydration-safe implementation for Next.js.
-
-Project Structure (Simplified)
-Plaintext
-
+```
 src/
-├── app/
-├── components/
-│   ├── widgets/
-│   ├── modals/
-│   └── layout/
-├── lib/
-│   ├── api/
-│   ├── store/
-│   └── hooks/
-└── redux/
-Getting Started
-Prerequisites
-Node.js 18+
+├── app/              # Next.js app router pages
+├── components/       # React components
+│   ├── widgets/      # Widget implementations
+│   ├── modals/       # Dialog components
+│   └── layout/       # Layout components
+├── lib/              # Core utilities
+│   ├── api/          # API client and validation
+│   ├── store/        # Redux store configuration
+│   └── hooks/        # Custom React hooks
+└── redux/            # Redux slices
+```
 
-Installation
-Install dependencies:
+## Getting Started
 
-Bash
+### Prerequisites
 
+Node.js version 18 or higher is required.
+
+### Installation
+
+Install project dependencies:
+
+```bash
 npm install
-Run the development server:
+```
 
-Bash
+Start the development server:
 
+```bash
 npm run dev
-Open in your browser: http://localhost:3000
+```
 
-Limitations (What This Project Does NOT Do)
-To maintain clarity, the following features are not implemented:
+Access the application at `http://localhost:3000`
 
-Multiple dashboards or User accounts/auth.
+## Scope and Limitations
 
-Collaboration, sharing, or notifications.
+The current implementation focuses on core dashboard functionality. The following features are explicitly excluded from the project scope:
 
-CSV/PDF export or Widget duplication.
+- Multiple dashboard management or multi-user support
+- User authentication and authorization systems
+- Collaborative editing or sharing mechanisms
+- Push notifications or alerting systems
+- Data export to CSV or PDF formats
+- Widget duplication functionality
+- Backend persistence layers
+- Real-time data synchronization via WebSockets
 
-Backend persistence or Real-time sockets.
+## Extension Guidelines
 
-Extending the Project
-To add a new widget type:
+To implement additional widget types, follow these steps:
 
-Create a widget component.
+1. Create the widget component in the `components/widgets` directory
+2. Register the new widget type in the `WidgetRenderer` component
+3. Add the widget to the type selector interface
+4. Define data consumption patterns for the validated API structure
 
-Register it in WidgetRenderer.
+## License
 
-Add it to the widget type selector.
+This project is licensed under the MIT License.
 
-Define how it consumes validated API data.
+## Author
 
-License
-MIT License
+**Dev Bhardwaj**
 
-Author
-Dev Bhardwaj GitHub: https://github.com/devbhardwaj012
+GitHub: [github.com/devbhardwaj012](https://github.com/devbhardwaj012)
