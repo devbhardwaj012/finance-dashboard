@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { fetchApi } from "@/lib/api/fetchApi";
 import { readPath } from "@/lib/api/validateApi";
 
@@ -9,6 +9,7 @@ import { readPath } from "@/lib/api/validateApi";
  *
  * Displays scalar values from an API response in a card layout.
  * Responsibilities:
+ * - Lazy load when widget enters viewport
  * - Periodically fetch API data
  * - Extract configured scalar fields using dot-path notation
  * - Format and display values intelligently (numbers, percentages, booleans)
@@ -37,6 +38,9 @@ export default function CardWidget({ widget, dragListeners, onDelete, onEdit }) 
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  const containerRef = useRef(null);
 
   /**
    * Fetches data from the API and updates widget state.
@@ -57,26 +61,49 @@ export default function CardWidget({ widget, dragListeners, onDelete, onEdit }) 
       setRawData(json);
       setLastUpdated(new Date());
       setIsInitialLoad(false);
+      setHasLoaded(true);
     } catch (err) {
       setError(err?.message || "Failed to refresh data");
       setIsInitialLoad(false);
+      setHasLoaded(true);
     } finally {
       setLoading(false);
     }
   }
 
   /**
-   * Initial data load and refresh interval setup.
+   * Intersection Observer for lazy loading
+   */
+  useEffect(() => {
+    if (hasLoaded) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadData();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasLoaded]);
+
+  /**
+   * Refresh interval setup after initial load.
    * Automatically cleans up the interval on unmount or config change.
    */
   useEffect(() => {
-    loadData();
-
-    if (!interval || interval <= 0) return;
+    if (!hasLoaded || !interval || interval <= 0) return;
 
     const id = setInterval(loadData, interval * 1000);
     return () => clearInterval(id);
-  }, [url, interval]);
+  }, [hasLoaded, url, interval]);
 
   /**
    * Formats values for display based on:
@@ -179,12 +206,41 @@ export default function CardWidget({ widget, dragListeners, onDelete, onEdit }) 
    */
   if (isInitialLoad && !rawData && !error) {
     return (
-      <div className="rounded-xl border p-5 bg-white dark:bg-slate-900 animate-pulse h-40" />
+      <div 
+        ref={containerRef} 
+        className="relative w-full h-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col min-h-[160px]"
+      >
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="h-5 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+            <div className="h-4 w-12 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+
+        {/* Content skeleton */}
+        <div className="space-y-3 flex-1">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+              <div className="h-4 w-20 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Loading indicator */}
+        <div className="mt-3 flex items-center justify-center gap-2 text-xs text-slate-400">
+          <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        </div>
+      </div>
     );
   }
 
   return (
     <div
+      ref={containerRef}
       {...dragListeners}
       className="relative w-full h-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing flex flex-col"
     >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { fetchApi } from "@/lib/api/fetchApi";
 import { readPath } from "@/lib/api/validateApi";
 
@@ -11,6 +11,7 @@ import ResizableWidget from "./ResizableWidget";
  *
  * Renders tabular data from an API response.
  * Responsibilities:
+ * - Lazy load when widget enters viewport
  * - Periodically fetch API data
  * - Extract an array from the response using a configured path
  * - Render selected fields as table columns
@@ -51,6 +52,10 @@ export default function TableWidget({
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  const containerRef = useRef(null);
 
   /**
    * Fetches API data and extracts table rows using the configured array path.
@@ -76,29 +81,53 @@ export default function TableWidget({
       }
 
       setRows(data);
+      setLastUpdated(new Date());
       setPage(0);
       setIsInitialLoad(false);
+      setHasLoaded(true);
     } catch (err) {
       setError(err.message || "Failed to load table");
       setRows([]);
       setIsInitialLoad(false);
+      setHasLoaded(true);
     } finally {
       setLoading(false);
     }
   }
 
   /**
-   * Initial load and refresh interval setup.
+   * Intersection Observer for lazy loading
+   */
+  useEffect(() => {
+    if (hasLoaded) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadData();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasLoaded]);
+
+  /**
+   * Refresh interval setup after initial load.
    * Automatically refreshes data based on widget configuration.
    */
   useEffect(() => {
-    loadData();
-
-    if (!interval) return;
+    if (!hasLoaded || !interval) return;
 
     const id = setInterval(loadData, interval * 1000);
     return () => clearInterval(id);
-  }, [url, interval, arrayPath, tableFields.join("|")]);
+  }, [hasLoaded, url, interval, arrayPath, tableFields.join("|")]);
 
   /**
    * Derived pagination values
@@ -211,15 +240,57 @@ export default function TableWidget({
    */
   if (isInitialLoad && rows.length === 0 && !error) {
     return (
-      <div className="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm">
-        <div className="h-72 bg-slate-100 dark:bg-slate-800/50 rounded animate-pulse" />
-      </div>
+      <ResizableWidget>
+        <div 
+          ref={containerRef} 
+          className="relative w-full h-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm flex flex-col min-h-[300px]"
+        >
+          {/* Header skeleton */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-40 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+              <div className="h-4 w-12 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Table skeleton */}
+          <div className="flex-1 space-y-2">
+            {/* Header row */}
+            <div className="flex gap-4 pb-2 border-b-2 border-slate-200 dark:border-slate-700">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-4 flex-1 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+              ))}
+            </div>
+
+            {/* Data rows */}
+            {[1, 2, 3, 4, 5, 6].map((row) => (
+              <div key={row} className="flex gap-4 py-2 border-b border-slate-100 dark:border-slate-800">
+                {[1, 2, 3, 4].map((col) => (
+                  <div 
+                    key={col} 
+                    className="h-4 flex-1 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"
+                    style={{ animationDelay: `${(row * 4 + col) * 50}ms` }}
+                  ></div>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          {/* Loading indicator */}
+          <div className="mt-3 flex items-center justify-center gap-2 text-xs text-slate-400">
+            <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          </div>
+        </div>
+      </ResizableWidget>
     );
   }
 
   return (
     <ResizableWidget>
       <div
+        ref={containerRef}
         {...dragListeners}
         className="relative w-full h-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing flex flex-col"
       >
@@ -338,6 +409,13 @@ export default function TableWidget({
                     Next →
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* Last refresh timestamp */}
+            {lastUpdated && (
+              <div className="mt-2 text-xs text-slate-400 text-right">
+                Updated: {lastUpdated.toLocaleTimeString()}
               </div>
             )}
           </div>
