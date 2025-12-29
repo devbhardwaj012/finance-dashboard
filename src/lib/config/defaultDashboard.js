@@ -25,27 +25,23 @@ export const DEFAULT_DASHBOARD = {
           "percentChange",
           "yearHigh",
           "yearLow"
-        ],
-        width: 423,
-        height: 412
+        ]
       },
       {
         id: "22620c82-79c9-4795-acf7-f74bd348ad26",
-        name: "Tata Financials",
-        url: "https://stock.indianapi.in/stock?name=Tata+Steel",
+        name: "Eternal Analyst View",
+        url: "https://stock.indianapi.in/stock?name=eternal",
         apiKey: "",
         apiKeyHeader: "X-Api-Key",
         apiKeyPrefix: "",
         interval: 3600,
         type: "table",
-        arrayPath: "financials",
+        arrayPath: "analystView",
         tableFields: [
-          "Type",
-          "EndDate",
-          "FiscalYear"
-        ],
-        width: 545,
-        height: 366
+          "numberOfAnalystsLatest",
+          "ratingValue",
+          "ratingName"
+        ]
       },
       {
         id: "default-BTC-card",
